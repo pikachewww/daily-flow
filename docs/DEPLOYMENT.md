@@ -1,182 +1,231 @@
-# 部署方案
+# 腾讯云部署方案
 
-推荐方案：
+本项目最终生产部署采用腾讯云方案，优先服务微信小程序正式发布和国内稳定访问。
 
-- 前端 Web：Cloudflare Pages
-- 微信小程序：微信开发者工具上传发布
-- 后端：Render Web Service
-- 数据库：Render Persistent Disk 上的 SQLite
-
-选择原因：成本低、部署简单、HTTPS 自动提供、支持环境变量、后端可长期运行，SQLite 对个人打卡数据足够稳定，后续可以平滑迁移到 PostgreSQL。
-
-## 1. 准备 GitHub 仓库
-
-项目当前需要先推送到 GitHub，Render 和 Cloudflare Pages 都可以从 GitHub 自动部署。
-
-```bash
-git init
-git add .
-git commit -m "Initial deployable app"
-git branch -M main
-git remote add origin https://github.com/pikachewww/daily-flow.git
-git push -u origin main
-```
-
-## 2. 后端部署到 Render
-
-推荐方式一：使用仓库根目录的 `render.yaml` Blueprint。
-
-1. 打开 Render。
-2. New -> Blueprint。
-3. 选择 GitHub 仓库。
-4. Render 会读取 `render.yaml` 创建后端服务和持久磁盘。
-5. 将 `CORS_ORIGIN` 改成你的正式前端域名。
-
-推荐方式二：手动创建 `Web Service`。
-
-1. 在 Render 创建 `Web Service`。
-2. 选择仓库，Root Directory 填：
+## 目标架构
 
 ```text
-ai-health-checkin/backend
+微信小程序
+  -> HTTPS 合法域名
+  -> 腾讯云轻量应用服务器 / CVM
+  -> Caddy 自动 HTTPS
+  -> Node.js API
+  -> SQLite 持久化卷
+
+预留：
+  -> 腾讯云 COS：头像、图片、导出文件、备份
+  -> TencentDB MySQL：多用户阶段迁移
 ```
 
-3. Build Command：
+## 1. GitHub 项目
 
-```bash
-npm install
-```
-
-4. Start Command：
-
-```bash
-npm start
-```
-
-5. 添加 Persistent Disk：
+代码仓库：
 
 ```text
-Mount Path: /var/data
-Size: 1GB
+https://github.com/pikachewww/daily-flow
 ```
 
-6. 配置环境变量：
+后续所有部署都从 `main` 分支拉取。
+
+## 2. 购买腾讯云资源
+
+个人长期使用推荐从低成本开始：
+
+- 腾讯云轻量应用服务器，地域选择中国大陆离你近的地域。
+- 系统镜像选择 Ubuntu LTS。
+- 最低配置即可起步，后续可升级。
+- 域名使用腾讯云 DNSPod 管理。
+- 文件存储预留腾讯云 COS。
+
+数据库当前使用 SQLite 持久化卷，数据文件保存在 Docker volume。后续多用户阶段迁移到 TencentDB MySQL。
+
+## 3. 域名解析
+
+准备一个 API 域名，例如：
+
+```text
+api.your-domain.com
+```
+
+在 DNSPod 添加 A 记录：
+
+```text
+主机记录：api
+记录类型：A
+记录值：你的腾讯云服务器公网 IP
+```
+
+等待解析生效。
+
+## 4. 服务器初始化
+
+登录服务器：
+
+```bash
+ssh root@你的服务器 IP
+```
+
+安装基础工具和 Docker：
+
+```bash
+apt update
+apt install -y git ca-certificates curl
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
+apt update
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+## 5. 拉取项目
+
+```bash
+mkdir -p /opt/yidian
+cd /opt/yidian
+git clone https://github.com/pikachewww/daily-flow.git .
+```
+
+## 6. 配置生产环境变量
+
+```bash
+cd /opt/yidian/deploy/tencent
+cp .env.production.example .env.production
+```
+
+编辑 `.env.production`：
 
 ```text
 NODE_ENV=production
-NODE_VERSION=22.22.3
 PORT=3001
-CORS_ORIGIN=https://your-frontend-domain.com
 DATABASE_PATH=/var/data/checkin.sqlite
+API_DOMAIN=api.your-domain.com
+ACME_EMAIL=you@example.com
+CORS_ORIGIN=*
 AI_PROVIDER=local
+```
+
+AI Key 全部放环境变量，不写进代码：
+
+```text
 OPENAI_API_KEY=
 GEMINI_API_KEY=
 DEEPSEEK_API_KEY=
 CLAUDE_API_KEY=
 ```
 
-Render 会提供 HTTPS 域名、自动重启、日志和环境变量管理。
-
-## 3. 数据库备份
-
-SQLite 数据库文件位于：
+后续上传头像、图片时启用 COS：
 
 ```text
-/var/data/checkin.sqlite
+TENCENT_SECRET_ID=
+TENCENT_SECRET_KEY=
+TENCENT_COS_BUCKET=
+TENCENT_COS_REGION=ap-guangzhou
 ```
 
-建议：
-
-- 每周从 Render Shell 下载一次备份。
-- 或升级到 Render PostgreSQL / Supabase PostgreSQL 后使用平台自动备份。
-
-个人长期使用首选 SQLite + 持久磁盘；当后续要多用户、登录、数据分析时迁移到 PostgreSQL。
-
-## 4. Web 前端部署到 Cloudflare Pages
-
-1. Cloudflare Pages 创建项目并连接 GitHub 仓库。
-2. Root Directory：
-
-```text
-ai-health-checkin/frontend
-```
-
-3. Build Command：
+## 7. 启动后端
 
 ```bash
-npm run build
+cd /opt/yidian/deploy/tencent
+docker compose up -d --build
 ```
 
-4. Output Directory：
+查看状态：
+
+```bash
+docker compose ps
+docker compose logs -f backend
+```
+
+验证：
+
+```bash
+curl https://api.your-domain.com/health
+curl https://api.your-domain.com/api/checkin/today
+```
+
+Caddy 会自动申请和续期 HTTPS 证书。
+
+## 8. 数据备份
+
+当前 SQLite 数据保存在 Docker volume `tencent_yidian_data`。
+
+建议每日备份到本机文件，后续再同步到 COS：
+
+```bash
+mkdir -p /opt/yidian/backups
+docker run --rm -v tencent_yidian_data:/data -v /opt/yidian/backups:/backup alpine sh -c "cp /data/checkin.sqlite /backup/checkin-$(date +%F).sqlite"
+```
+
+后续可用 COS CLI 或定时任务把 `/opt/yidian/backups` 同步到腾讯云 COS。
+
+## 9. 小程序配置
+
+修改：
 
 ```text
-dist
+frontend/miniprogram/utils/config.js
 ```
 
-5. 在 Cloudflare Pages 环境变量中设置：
+将：
+
+```js
+apiBaseUrl: "http://localhost:3001/api"
+```
+
+改为：
+
+```js
+apiBaseUrl: "https://api.your-domain.com/api"
+```
+
+提交并推送：
+
+```bash
+git add frontend/miniprogram/utils/config.js
+git commit -m "Configure production API for miniprogram"
+git push
+```
+
+## 10. 微信公众平台配置
+
+进入微信公众平台：
 
 ```text
-API_BASE_URL=https://your-backend.onrender.com/api
+开发管理 -> 开发设置 -> 服务器域名
 ```
 
-部署完成后，将前端域名加入后端 `CORS_ORIGIN`。
+添加 request 合法域名：
 
-## 5. 微信小程序发布
+```text
+https://api.your-domain.com
+```
+
+正式环境必须使用 HTTPS，不能使用 localhost。
+
+## 11. 微信开发者工具上传
 
 1. 打开微信开发者工具。
-2. 导入目录：
+2. 导入：
 
 ```text
-ai-health-checkin/frontend/miniprogram
+frontend/miniprogram
 ```
 
-3. 本地开发时，`utils/config.js` 可以使用：
+3. 使用真实 AppID。
+4. 本地预览确认无误。
+5. 点击“上传”。
+6. 到微信公众平台提交审核。
+7. 审核通过后发布。
 
-```js
-module.exports = {
-  apiBaseUrl: "http://localhost:3001/api"
-};
-```
+## 12. 后续升级路线
 
-在微信开发者工具中勾选“不校验合法域名、web-view、TLS 版本以及 HTTPS 证书”即可本地调试。
+当需要多用户/微信登录时：
 
-4. 正式发布前，在 `utils/config.js` 中配置 HTTPS 后端地址：
+1. 新增用户表。
+2. 所有业务表增加 `user_id`。
+3. API 增加登录态校验。
+4. 数据库迁移到 TencentDB MySQL。
+5. COS 用于图片和导出文件。
 
-```js
-module.exports = {
-  apiBaseUrl: "https://your-backend.onrender.com/api"
-};
-```
-
-5. 在微信公众平台配置服务器域名：
-
-```text
-request 合法域名：https://your-backend.onrender.com
-```
-
-6. 使用真实小程序 AppID 替换 `project.config.json` 里的 `appid`。
-7. 在开发者工具中点击“上传”。
-8. 到微信公众平台提交审核。
-9. 审核通过后发布。
-
-注意：微信小程序正式环境必须使用 HTTPS，不能使用 localhost。
-
-## 6. AI Provider 配置
-
-所有 API Key 只放环境变量，不写入代码：
-
-```text
-AI_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-
-AI_PROVIDER=deepseek
-DEEPSEEK_API_KEY=...
-
-AI_PROVIDER=gemini
-GEMINI_API_KEY=...
-
-AI_PROVIDER=claude
-CLAUDE_API_KEY=...
-```
-
-如果没有配置任何 Key，后端会自动使用本地规则生成总结，功能不会中断。
+这个升级不会推翻当前小程序前端和 API 设计，只需要扩展后端数据层和鉴权层。

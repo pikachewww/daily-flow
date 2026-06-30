@@ -1,0 +1,40 @@
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: deploy/tencent/backend.Dockerfile
+    container_name: yidian-api
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    volumes:
+      - yidian_data:/var/data
+    networks:
+      - yidian
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: yidian-caddy
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - yidian
+
+networks:
+  yidian:
+
+volumes:
+  yidian_data:
+  caddy_data:
+  caddy_config:

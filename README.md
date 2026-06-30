@@ -12,7 +12,7 @@ ai-health-checkin/
     web/              # Web 前端
     miniprogram/      # 微信小程序前端
   backend/
-    src/              # Express API + SQLite
+    src/              # Node.js API + SQLite
     .env.example
   docs/
     API.md
@@ -106,7 +106,11 @@ frontend/miniprogram/utils/config.js
 
 ## 部署文档
 
-见 [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)。
+见 [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)。最终生产部署采用腾讯云方案。
+
+## 长期架构
+
+见 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
 
 ## 生产构建
 
