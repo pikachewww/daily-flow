@@ -2,6 +2,8 @@
 
 前后端分离的小型打卡项目，支持 Web 前端和微信小程序前端。数据由后端 API 持久化到 SQLite，不再使用浏览器 `localStorage`。
 
+Daily Flow is a minimalist daily check-in app designed to help you build better habits by tracking learning, health, and personal growth.
+
 ## 项目结构
 
 ```text
