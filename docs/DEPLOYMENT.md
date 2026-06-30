@@ -65,26 +65,23 @@ api.your-domain.com
 ssh root@你的服务器 IP
 ```
 
-安装基础工具和 Docker：
+推荐使用脚本安装基础工具、Docker 和防火墙规则：
 
 ```bash
-apt update
-apt install -y git ca-certificates curl
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
-apt update
-apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+curl -fsSL https://raw.githubusercontent.com/pikachewww/daily-flow/main/deploy/tencent/scripts/install-docker.sh -o install-docker.sh
+bash install-docker.sh
 ```
 
 ## 5. 拉取项目
 
+推荐使用部署脚本：
+
 ```bash
-mkdir -p /opt/yidian
-cd /opt/yidian
-git clone https://github.com/pikachewww/daily-flow.git .
+curl -fsSL https://raw.githubusercontent.com/pikachewww/daily-flow/main/deploy/tencent/scripts/deploy.sh -o deploy.sh
+bash deploy.sh
 ```
+
+第一次运行会创建 `/opt/yidian/deploy/tencent/.env.production` 并提示你编辑。
 
 ## 6. 配置生产环境变量
 
@@ -125,9 +122,10 @@ TENCENT_COS_REGION=ap-guangzhou
 
 ## 7. 启动后端
 
+编辑完 `.env.production` 后再次运行：
+
 ```bash
-cd /opt/yidian/deploy/tencent
-docker compose up -d --build
+bash deploy.sh
 ```
 
 查看状态：
@@ -153,8 +151,19 @@ Caddy 会自动申请和续期 HTTPS 证书。
 建议每日备份到本机文件，后续再同步到 COS：
 
 ```bash
-mkdir -p /opt/yidian/backups
-docker run --rm -v tencent_yidian_data:/data -v /opt/yidian/backups:/backup alpine sh -c "cp /data/checkin.sqlite /backup/checkin-$(date +%F).sqlite"
+/opt/yidian/deploy/tencent/scripts/backup-sqlite.sh
+```
+
+添加每日定时备份：
+
+```bash
+crontab -e
+```
+
+加入：
+
+```text
+10 3 * * * /opt/yidian/deploy/tencent/scripts/backup-sqlite.sh >> /var/log/yidian-backup.log 2>&1
 ```
 
 后续可用 COS CLI 或定时任务把 `/opt/yidian/backups` 同步到腾讯云 COS。
