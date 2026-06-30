@@ -1,0 +1,11 @@
+{
+  "name": "ai-health-checkin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "backend:dev": "npm --prefix backend run dev",
+    "backend:start": "npm --prefix backend start",
+    "backend:init-db": "npm --prefix backend run init-db",
+    "frontend:dev": "npm --prefix frontend run dev"
+  }
+}

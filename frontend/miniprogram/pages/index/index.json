@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "一点",
+  "usingComponents": {
+    "completion-feedback": "../../components/completion-feedback/completion-feedback"
+  }
+}

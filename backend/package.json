@@ -1,0 +1,14 @@
+{
+  "name": "ai-health-checkin-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "init-db": "node src/scripts/init-db.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

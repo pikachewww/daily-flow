@@ -1,0 +1,150 @@
+.completion-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 26, 33, 0.22);
+  animation: mask-fade 960ms ease-out forwards;
+  pointer-events: none;
+}
+
+.completion-card {
+  width: 260rpx;
+  height: 220rpx;
+  border-radius: 48rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transform-origin: center;
+  animation: card-pop 960ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+
+.completion-orb {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #2f8f61, #226b49);
+  box-shadow: inset 0 2rpx 6rpx rgba(255, 255, 255, 0.32), 0 18rpx 42rpx rgba(47, 143, 97, 0.26);
+  animation: orb-breathe 960ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+
+.completion-icon-image {
+  width: 62rpx;
+  height: 62rpx;
+}
+
+.completion-check {
+  position: relative;
+  width: 62rpx;
+  height: 48rpx;
+  transform: rotate(-45deg);
+}
+
+.check-stem,
+.check-tail {
+  position: absolute;
+  background: #fff;
+  border-radius: 999rpx;
+}
+
+.check-stem {
+  left: 7rpx;
+  bottom: 7rpx;
+  width: 18rpx;
+  height: 0;
+  animation: check-stem 360ms ease-out 170ms forwards;
+}
+
+.check-tail {
+  left: 7rpx;
+  bottom: 7rpx;
+  width: 0;
+  height: 18rpx;
+  animation: check-tail 440ms ease-out 340ms forwards;
+}
+
+.completion-text {
+  margin-top: 20rpx;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: 0 4rpx 18rpx rgba(20, 26, 33, 0.28);
+}
+
+@keyframes mask-fade {
+  0% {
+    opacity: 0;
+  }
+  16% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes card-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  42% {
+    transform: scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes orb-breathe {
+  0% {
+    transform: scale(0.8);
+  }
+  24% {
+    transform: scale(1.08);
+  }
+  48% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes check-stem {
+  from {
+    height: 0;
+  }
+  to {
+    height: 34rpx;
+  }
+}
+
+@keyframes check-tail {
+  from {
+    width: 0;
+  }
+  to {
+    width: 58rpx;
+  }
+}

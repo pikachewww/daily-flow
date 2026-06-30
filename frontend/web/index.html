@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>一点</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="completion-feedback" id="completionFeedback"></div>
+
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="todayDate">今日</p>
+          <h1>一点</h1>
+        </div>
+        <div class="streak-pill">
+          <span id="headerStreak">0</span>
+          <small>连续天</small>
+        </div>
+      </header>
+
+      <p class="status-line" id="statusLine">正在连接后端...</p>
+
+      <nav class="tabs" aria-label="页面导航">
+        <button class="tab is-active" type="button" data-view="today">今日</button>
+        <button class="tab" type="button" data-view="history">历史</button>
+        <button class="tab" type="button" data-view="stats">统计</button>
+        <button class="tab" type="button" data-view="items">管理</button>
+      </nav>
+
+      <section class="view is-active" id="todayView">
+        <section class="summary-grid" aria-label="今日概览">
+          <article class="metric">
+            <span>今日完成率</span>
+            <strong id="todayRate">0%</strong>
+          </article>
+          <article class="metric">
+            <span>连续打卡</span>
+            <strong id="streakDays">0 天</strong>
+          </article>
+        </section>
+
+        <p class="encouragement" id="encouragement">从一个小动作开始。</p>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>任务列表</h2>
+            <span id="taskCount">0/7</span>
+          </div>
+          <div class="task-list" id="taskList"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>打卡日历</h2>
+            <span id="calendarTitle">本月</span>
+          </div>
+          <div class="calendar-week" aria-hidden="true">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="calendar-detail" id="calendarDetail"></div>
+        </section>
+
+        <section class="panel ai-panel" id="aiDetails">
+          <div class="section-title">
+            <h2>学习记录</h2>
+            <span>可选</span>
+          </div>
+          <label>
+            今天学习了什么
+            <textarea id="aiTopic" rows="3" placeholder="例如：Prompt 工程、React 状态管理"></textarea>
+          </label>
+          <label>
+            学习时长（分钟）
+            <input id="aiMinutes" type="number" inputmode="numeric" min="0" placeholder="例如：30" />
+          </label>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>今日总结</h2>
+            <span>可为空</span>
+          </div>
+          <label>
+            今天最大的收获
+            <textarea id="dailyGain" rows="3" placeholder="记录一句今天的收获"></textarea>
+          </label>
+          <label>
+            今日体重（kg）
+            <input id="weight" type="number" inputmode="decimal" min="0" step="0.1" placeholder="可选" />
+          </label>
+          <button class="primary-btn" type="button" id="generateSummary">生成 AI 总结</button>
+          <p class="ai-summary" id="aiSummary">点击按钮生成一句今日总结。</p>
+        </section>
+      </section>
+
+      <section class="view" id="historyView">
+        <section class="panel">
+          <div class="section-title">
+            <h2>历史记录</h2>
+            <span id="historyCount">0 天</span>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="statsView">
+        <section class="summary-grid stats-grid">
+          <article class="metric">
+            <span>连续打卡天数</span>
+            <strong id="statsStreak">0</strong>
+          </article>
+          <article class="metric">
+            <span>最近 7 天完成率</span>
+            <strong id="statsSevenRate">0%</strong>
+          </article>
+          <article class="metric">
+            <span>学习完成次数</span>
+            <strong id="statsAiCount">0</strong>
+          </article>
+          <article class="metric">
+            <span>体重变化</span>
+            <strong id="statsWeight">暂无</strong>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>最近 7 天</h2>
+            <span>完成率</span>
+          </div>
+          <div class="seven-days" id="sevenDays"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>体重趋势</h2>
+            <span>最近 7 天</span>
+          </div>
+          <div class="weight-trend" id="weightTrend7"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>体重趋势</h2>
+            <span>最近 30 天</span>
+          </div>
+          <div class="weight-trend" id="weightTrend30"></div>
+        </section>
+      </section>
+
+      <section class="view" id="itemsView">
+        <section class="panel">
+          <div class="section-title">
+            <h2>打卡项管理</h2>
+            <span>默认项每天显示</span>
+          </div>
+          <div class="item-form">
+            <input id="newItemName" type="text" maxlength="20" placeholder="新增打卡项，例如：阅读" />
+            <button class="primary-btn compact-btn" type="button" id="addItem">新增</button>
+          </div>
+          <div class="item-list" id="itemList"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="./completion-feedback.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

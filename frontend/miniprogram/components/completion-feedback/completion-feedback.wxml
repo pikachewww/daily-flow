@@ -1,0 +1,12 @@
+<view wx:if="{{visible}}" class="completion-mask">
+  <view class="completion-card">
+    <view class="completion-orb">
+      <image wx:if="{{icon}}" class="completion-icon-image" src="{{icon}}" mode="aspectFit" />
+      <view wx:else class="completion-check">
+        <view class="check-stem"></view>
+        <view class="check-tail"></view>
+      </view>
+    </view>
+    <view class="completion-text">{{message}}</view>
+  </view>
+</view>

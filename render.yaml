@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: yidian-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.22.3
+      - key: PORT
+        value: 3001
+      - key: DATABASE_PATH
+        value: /var/data/checkin.sqlite
+      - key: CORS_ORIGIN
+        value: https://your-frontend-domain.pages.dev
+      - key: AI_PROVIDER
+        value: local
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: CLAUDE_API_KEY
+        sync: false
+    disk:
+      name: checkin-data
+      mountPath: /var/data
+      sizeGB: 1

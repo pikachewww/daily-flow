@@ -1,0 +1,141 @@
+<view class="page">
+  <completion-feedback visible="{{completionFeedbackVisible}}" message="{{completionFeedbackMessage}}" icon="{{completionFeedbackIcon}}" />
+
+  <view class="topbar">
+    <view>
+      <text class="date">{{today.date || '今日'}}</text>
+      <view class="title">一点</view>
+    </view>
+    <view class="streak">
+      <text>{{stats.streak || 0}}</text>
+      <text class="small">连续天</text>
+    </view>
+  </view>
+
+  <view class="tabs">
+    <button class="tab {{viewName === 'today' ? 'active' : ''}}" bindtap="switchView" data-view="today">今日</button>
+    <button class="tab {{viewName === 'history' ? 'active' : ''}}" bindtap="switchView" data-view="history">历史</button>
+    <button class="tab {{viewName === 'stats' ? 'active' : ''}}" bindtap="switchView" data-view="stats">统计</button>
+    <button class="tab {{viewName === 'items' ? 'active' : ''}}" bindtap="switchView" data-view="items">管理</button>
+  </view>
+
+  <view wx:if="{{viewName === 'today'}}">
+    <view class="metrics">
+      <view class="metric">
+        <text>今日完成率</text>
+        <strong>{{todayRate}}%</strong>
+      </view>
+      <view class="metric">
+        <text>连续打卡</text>
+        <strong>{{stats.streak || 0}} 天</strong>
+      </view>
+    </view>
+
+    <view class="panel">
+      <view class="section-title">
+        <text>任务列表</text>
+        <text>{{doneCount}}/{{taskTotal}}</text>
+      </view>
+      <button wx:for="{{taskList}}" wx:key="id" class="task {{item.done ? 'done' : ''}}" bindtap="toggleTask" data-name="{{item.id}}">
+        <text>{{item.name}}</text>
+        <text>{{item.done ? '已完成' : '未完成'}}</text>
+      </button>
+    </view>
+
+    <view class="panel" wx:if="{{today.tasks['学习']}}">
+      <view class="section-title"><text>学习记录</text><text>可选</text></view>
+      <textarea value="{{today.aiTopic}}" placeholder="今天学习了什么" bindblur="onFieldBlur" data-field="aiTopic" />
+      <input value="{{today.aiMinutes}}" type="number" placeholder="学习时长（分钟）" bindblur="onFieldBlur" data-field="aiMinutes" />
+    </view>
+
+    <view class="panel">
+      <view class="section-title"><text>今日总结</text><text>可为空</text></view>
+      <textarea value="{{today.dailyGain}}" placeholder="今天最大的收获" bindblur="onFieldBlur" data-field="dailyGain" />
+      <input value="{{today.weight}}" type="digit" placeholder="今日体重（kg）" bindblur="onFieldBlur" data-field="weight" />
+      <button class="primary" bindtap="generateSummary">生成 AI 总结</button>
+      <view class="summary">{{today.aiSummary || '点击按钮生成一句今日总结。'}}</view>
+    </view>
+
+    <view class="panel">
+      <view class="section-title"><text>打卡日历</text><text>{{calendarTitle}}</text></view>
+      <view class="calendar-week">
+        <text>日</text><text>一</text><text>二</text><text>三</text><text>四</text><text>五</text><text>六</text>
+      </view>
+      <view class="calendar-grid">
+        <view wx:for="{{calendarDays}}" wx:key="key" class="calendar-day {{item.empty ? 'empty-day' : ''}} {{item.checkedIn ? 'checked' : ''}} {{item.isToday ? 'today' : ''}}" bindtap="selectCalendarDate" data-date="{{item.date}}">
+          <text>{{item.label}}</text>
+          <text class="calendar-weight {{item.weightClass}}" wx:if="{{item.weightLabel}}">{{item.weightLabel}}</text>
+        </view>
+      </view>
+      <view class="calendar-detail" wx:if="{{selectedRecord}}">
+        <view>{{selectedRecord.date}}</view>
+        <view>打卡：
+          <text wx:for="{{selectedRecord.taskItems}}" wx:key="id" wx:if="{{item.done}}">{{item.name}} </text>
+        </view>
+        <view>体重：{{selectedRecord.weight !== '' ? selectedRecord.weight + 'kg' : '未记录'}}</view>
+        <view>学习：{{selectedRecord.aiTopic || '未填写'}}</view>
+        <view wx:if="{{selectedRecord.dailyGain}}">收获：{{selectedRecord.dailyGain}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{viewName === 'history'}}" class="panel">
+    <view class="section-title"><text>历史记录</text><text>{{history.length}} 天</text></view>
+    <view wx:if="{{history.length === 0}}" class="empty">暂无历史记录</view>
+    <view wx:for="{{history}}" wx:key="date" class="history-item">
+      <view class="history-head"><text>{{item.date}}</text><text>{{item.rate}}%</text></view>
+      <view class="detail">学习：{{item.aiLine}}</view>
+      <view class="detail" wx:if="{{item.weight !== ''}}">体重：{{item.weight}}kg</view>
+      <view class="detail" wx:if="{{item.dailyGain}}">收获：{{item.dailyGain}}</view>
+      <view class="detail" wx:if="{{item.aiSummary}}">总结：{{item.aiSummary}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{viewName === 'stats'}}">
+    <view class="metrics">
+      <view class="metric"><text>连续打卡天数</text><strong>{{stats.streak || 0}}</strong></view>
+      <view class="metric"><text>最近 7 天完成率</text><strong>{{stats.sevenDayAverage || 0}}%</strong></view>
+      <view class="metric"><text>学习完成次数</text><strong>{{stats.learningCompletedCount || stats.aiCompletedCount || 0}}</strong></view>
+      <view class="metric"><text>体重变化</text><strong>{{stats.weightChange.label || '暂无'}}</strong></view>
+    </view>
+    <view class="panel">
+      <view class="section-title"><text>最近 7 天</text><text>完成率</text></view>
+      <view wx:for="{{stats.sevenDays}}" wx:key="date" class="day-row">
+        <text>{{item.date}}</text>
+        <text>{{item.rate}}%</text>
+      </view>
+    </view>
+    <view class="panel">
+      <view class="section-title"><text>体重趋势</text><text>最近 7 天</text></view>
+      <view wx:for="{{stats.weightTrend7}}" wx:key="date" class="day-row">
+        <text>{{item.date}}</text>
+        <text>{{item.direction === 'up' ? '📈' : item.direction === 'down' ? '📉' : '➖'}} {{item.weight}}kg</text>
+      </view>
+    </view>
+    <view class="panel">
+      <view class="section-title"><text>体重趋势</text><text>最近 30 天</text></view>
+      <view wx:for="{{stats.weightTrend30}}" wx:key="date" class="day-row">
+        <text>{{item.date}}</text>
+        <text>{{item.direction === 'up' ? '📈' : item.direction === 'down' ? '📉' : '➖'}} {{item.weight}}kg</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{viewName === 'items'}}" class="panel">
+    <view class="section-title"><text>打卡项管理</text><text>默认项每天显示</text></view>
+    <view class="item-form">
+      <input value="{{newItemName}}" placeholder="新增打卡项，例如：阅读" bindinput="onNewItemInput" />
+      <button class="primary small-button" bindtap="addItem">新增</button>
+    </view>
+    <view wx:for="{{items}}" wx:key="id" class="manage-item">
+      <input value="{{item.name}}" data-id="{{item.id}}" bindblur="renameItem" />
+      <view class="manage-actions">
+        <button size="mini" data-id="{{item.id}}" data-action="enabled" bindtap="updateItem">{{item.enabled ? '停用' : '启用'}}</button>
+        <button size="mini" data-id="{{item.id}}" data-action="default" bindtap="updateItem">{{item.isDefault ? '取消默认' : '设为默认'}}</button>
+        <button size="mini" data-id="{{item.id}}" data-action="up" bindtap="updateItem">上移</button>
+        <button size="mini" data-id="{{item.id}}" data-action="down" bindtap="updateItem">下移</button>
+        <button size="mini" data-id="{{item.id}}" data-action="delete" bindtap="updateItem">删除</button>
+      </view>
+    </view>
+  </view>
+</view>
